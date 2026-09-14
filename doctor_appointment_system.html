@@ -1,0 +1,514 @@
+
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--color-background-tertiary);color:var(--color-text-primary)}
+.nav{background:#1a3a8f;padding:0 24px;display:flex;align-items:center;gap:0;min-height:52px;flex-wrap:wrap}
+.nav-brand{color:#fff;font-size:15px;font-weight:500;padding:14px 16px 14px 0;border-right:1px solid rgba(255,255,255,0.2);margin-right:8px;white-space:nowrap}
+.nav a{color:rgba(255,255,255,0.85);font-size:13px;padding:14px 12px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.nav a:hover,.nav a.active{color:#fff;background:rgba(255,255,255,0.12)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+.page{display:none;padding:32px 24px;max-width:860px;margin:0 auto}
+.page.active{display:block}
+.page-title{font-size:22px;font-weight:500;text-align:center;margin-bottom:24px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:20px 24px}
+.btn-primary{background:#1a3a8f;color:#fff;border:none;padding:9px 20px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:8px}
+.btn-primary:hover{background:#0c2870}
+.btn-danger{background:#A32D2D;color:#fff;border:none;padding:8px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer}
+.btn-danger:hover{background:#791F1F}
+.btn-secondary{background:transparent;color:#1a3a8f;border:1.5px solid #1a3a8f;padding:8px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer}
+.btn-secondary:hover{background:#E6F1FB}
+input,select,textarea{width:100%;padding:9px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);margin-top:4px}
+input:focus,select:focus{outline:none;border-color:#1a3a8f}
+label{font-size:12px;color:var(--color-text-secondary);font-weight:500;display:block;margin-top:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.alert{padding:10px 14px;border-radius:var(--border-radius-md);font-size:13px;margin-bottom:16px}
+.alert-success{background:var(--color-background-success);color:var(--color-text-success)}
+.alert-error{background:var(--color-background-danger);color:var(--color-text-danger)}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:16px}
+.doc-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:20px;text-align:center}
+.doc-avatar{width:56px;height:56px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:16px;color:#185FA5;margin:0 auto 12px}
+.doc-name{font-size:14px;font-weight:500;color:#185FA5;margin-bottom:8px}
+.doc-info{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-avail{background:#EAF3DE;color:#27500A}
+.badge-busy{background:#FCEBEB;color:#791F1F}
+.appt-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.appt-info{flex:1}
+.appt-doc{font-size:14px;font-weight:500;margin-bottom:4px}
+.appt-meta{font-size:12px;color:var(--color-text-secondary)}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;margin-right:8px}
+.status-confirmed{background:#EAF3DE;color:#27500A}
+.status-cancelled{background:#FCEBEB;color:#791F1F}
+.modal-backdrop{display:none;background:rgba(0,0,0,0.45);padding:40px 24px}
+.modal-backdrop.open{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:24px;width:100%;max-width:420px}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:16px}
+.search-bar{position:relative;margin-bottom:20px}
+.search-bar input{padding-left:36px}
+.search-bar i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-tertiary);font-size:16px}
+.profile-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:500;color:#185FA5}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;text-align:center}
+.stat-num{font-size:22px;font-weight:500;color:#1a3a8f}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--color-text-secondary);font-size:13px}
+.divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:16px 0}
+.toast{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:#1a3a8f;color:#fff;padding:10px 20px;border-radius:var(--border-radius-md);font-size:13px;display:none;white-space:nowrap;z-index:99}
+.toast.show{display:block}
+</style>
+
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Doctor appointment booking system interactive demo</h2>
+
+<div style="position:relative;min-height:600px">
+
+<nav class="nav" id="navbar">
+  <span class="nav-brand"><i class="ti ti-stethoscope" aria-hidden="true" style="margin-right:6px"></i>MediBook</span>
+  <a onclick="showPage('home')" id="nav-home" class="active">Home</a>
+  <span id="nav-auth-links">
+    <a onclick="showPage('login')" id="nav-login">Login</a>
+    <a onclick="showPage('signup')" id="nav-signup">Sign Up</a>
+  </span>
+  <a onclick="showPage('doctors')" id="nav-doctors">Doctors</a>
+  <a onclick="showPage('appointments')" id="nav-appointments">Appointments</a>
+  <a onclick="requireLogin('profile')" id="nav-profile">Profile</a>
+  <a onclick="requireLogin('myappointments')" id="nav-myappts">My Appointments</a>
+  <div class="nav-right" id="nav-user-area" style="display:none">
+    <a onclick="logout()" style="color:rgba(255,255,255,0.7);font-size:12px"><i class="ti ti-logout" style="font-size:14px;vertical-align:-2px;margin-right:4px" aria-hidden="true"></i>Logout</a>
+  </div>
+</nav>
+
+<div id="page-home" class="page active">
+  <div style="text-align:center;padding:48px 24px 32px">
+    <div style="width:72px;height:72px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;margin:0 auto 20px"><i class="ti ti-stethoscope" style="font-size:32px;color:#185FA5" aria-hidden="true"></i></div>
+    <h1 style="font-size:22px;font-weight:500;margin-bottom:10px">Doctor Appointment Booking System</h1>
+    <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:24px;max-width:420px;margin-left:auto;margin-right:auto">Book appointments with doctors quickly and efficiently. Manage your health with ease.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" style="width:auto" onclick="showPage('doctors')"><i class="ti ti-search" aria-hidden="true" style="margin-right:6px"></i>Find Doctors</button>
+      <button class="btn-secondary" onclick="showPage('signup')">Create Account</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:8px">
+    <div class="card" style="text-align:center;padding:20px 12px">
+      <i class="ti ti-search" style="font-size:28px;color:#185FA5;margin-bottom:8px" aria-hidden="true"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Doctor Search</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">Find specialists near you</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px 12px">
+      <i class="ti ti-calendar-plus" style="font-size:28px;color:#185FA5;margin-bottom:8px" aria-hidden="true"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Easy Booking</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">Book in seconds</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px 12px">
+      <i class="ti ti-notes" style="font-size:28px;color:#185FA5;margin-bottom:8px" aria-hidden="true"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Appointment Mgmt</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">View & cancel anytime</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px 12px">
+      <i class="ti ti-user-circle" style="font-size:28px;color:#185FA5;margin-bottom:8px" aria-hidden="true"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Patient Profiles</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">Your health records</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-login" class="page">
+  <div style="max-width:360px;margin:0 auto">
+    <h1 class="page-title">Welcome back</h1>
+    <div class="card">
+      <div id="login-alert"></div>
+      <label>Email address</label>
+      <input type="email" id="login-email" placeholder="you@example.com">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Enter password">
+      <button class="btn-primary" onclick="doLogin()">Login</button>
+      <hr class="divider">
+      <p style="text-align:center;font-size:12px;color:var(--color-text-secondary)">Don't have an account? <a onclick="showPage('signup')" style="color:#185FA5;cursor:pointer">Sign up</a></p>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--color-text-tertiary);margin-top:12px">Demo: use any email + password</p>
+  </div>
+</div>
+
+<div id="page-signup" class="page">
+  <div style="max-width:400px;margin:0 auto">
+    <h1 class="page-title">Create account</h1>
+    <div class="card">
+      <div id="signup-alert"></div>
+      <div class="form-row">
+        <div><label>First name</label><input type="text" id="su-first" placeholder="Rahul"></div>
+        <div><label>Last name</label><input type="text" id="su-last" placeholder="Sharma"></div>
+      </div>
+      <label>Email address</label>
+      <input type="email" id="su-email" placeholder="you@example.com">
+      <label>Phone number</label>
+      <input type="tel" id="su-phone" placeholder="+91 98765 43210">
+      <label>Date of birth</label>
+      <input type="date" id="su-dob">
+      <label>Password</label>
+      <input type="password" id="su-pass" placeholder="Min 6 characters">
+      <label>Confirm password</label>
+      <input type="password" id="su-pass2" placeholder="Repeat password">
+      <button class="btn-primary" onclick="doSignup()">Create account</button>
+      <hr class="divider">
+      <p style="text-align:center;font-size:12px;color:var(--color-text-secondary)">Already have an account? <a onclick="showPage('login')" style="color:#185FA5;cursor:pointer">Login</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="page-doctors" class="page">
+  <h1 class="page-title">Available Doctors</h1>
+  <div class="search-bar">
+    <i class="ti ti-search" aria-hidden="true"></i>
+    <input type="text" id="doc-search" placeholder="Search by name or specialization..." oninput="filterDoctors()">
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="spec-filters">
+    <button onclick="filterBySpec('')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="">All</button>
+    <button onclick="filterBySpec('Cardiologist')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="Cardiologist">Cardiologist</button>
+    <button onclick="filterBySpec('Dermatologist')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="Dermatologist">Dermatologist</button>
+    <button onclick="filterBySpec('Orthopedic')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="Orthopedic">Orthopedic</button>
+    <button onclick="filterBySpec('Neurologist')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="Neurologist">Neurologist</button>
+    <button onclick="filterBySpec('Pediatrician')" class="btn-secondary" style="padding:5px 12px;font-size:12px" data-spec="Pediatrician">Pediatrician</button>
+  </div>
+  <div class="doc-grid" id="doc-list"></div>
+</div>
+
+<div id="page-appointments" class="page">
+  <h1 class="page-title">Book an Appointment</h1>
+  <div class="card" style="max-width:480px;margin:0 auto">
+    <div id="appt-alert"></div>
+    <label>Select Doctor</label>
+    <select id="appt-doc">
+      <option value="">-- Choose a doctor --</option>
+    </select>
+    <label>Preferred Date</label>
+    <input type="date" id="appt-date">
+    <label>Preferred Time</label>
+    <select id="appt-time">
+      <option value="">-- Select time --</option>
+      <option>09:00 AM</option><option>10:00 AM</option><option>11:00 AM</option>
+      <option>12:00 PM</option><option>02:00 PM</option><option>03:00 PM</option>
+      <option>04:00 PM</option><option>05:00 PM</option>
+    </select>
+    <label>Reason for visit</label>
+    <textarea id="appt-reason" rows="2" placeholder="Brief description of symptoms or reason..."></textarea>
+    <button class="btn-primary" onclick="bookAppointment()"><i class="ti ti-calendar-plus" aria-hidden="true" style="margin-right:6px"></i>Confirm Booking</button>
+  </div>
+</div>
+
+<div id="page-myappointments" class="page">
+  <h1 class="page-title">My Appointments</h1>
+  <div class="stat-grid" id="appt-stats"></div>
+  <div id="my-appt-list"></div>
+</div>
+
+<div id="page-profile" class="page">
+  <div style="max-width:480px;margin:0 auto">
+    <div class="card">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-initials">?</div>
+        <div>
+          <div style="font-size:16px;font-weight:500" id="profile-name">Guest</div>
+          <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-email-display"></div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div id="profile-alert"></div>
+      <div class="form-row">
+        <div><label>First name</label><input type="text" id="p-first"></div>
+        <div><label>Last name</label><input type="text" id="p-last"></div>
+      </div>
+      <label>Email</label>
+      <input type="email" id="p-email">
+      <label>Phone</label>
+      <input type="tel" id="p-phone">
+      <label>Date of birth</label>
+      <input type="date" id="p-dob">
+      <label>Blood group</label>
+      <select id="p-blood">
+        <option value="">Not specified</option>
+        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+      </select>
+      <label>Medical notes (allergies, conditions)</label>
+      <textarea id="p-notes" rows="2" placeholder="e.g. Allergic to penicillin..."></textarea>
+      <button class="btn-primary" onclick="saveProfile()"><i class="ti ti-check" aria-hidden="true" style="margin-right:6px"></i>Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="book-modal">
+  <div class="modal">
+    <div class="modal-title"><i class="ti ti-calendar-plus" aria-hidden="true" style="margin-right:6px;color:#185FA5"></i>Book appointment</div>
+    <div id="modal-doc-info" style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px"></div>
+    <div id="modal-alert"></div>
+    <label>Preferred Date</label>
+    <input type="date" id="modal-date">
+    <label>Preferred Time</label>
+    <select id="modal-time">
+      <option value="">-- Select time --</option>
+      <option>09:00 AM</option><option>10:00 AM</option><option>11:00 AM</option>
+      <option>12:00 PM</option><option>02:00 PM</option><option>03:00 PM</option>
+      <option>04:00 PM</option><option>05:00 PM</option>
+    </select>
+    <label>Reason for visit</label>
+    <textarea id="modal-reason" rows="2" placeholder="Brief description..."></textarea>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-primary" onclick="confirmModalBooking()" style="flex:1">Confirm</button>
+      <button class="btn-secondary" onclick="closeModal()" style="flex:1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+const doctors = [
+  {id:1,name:'Dr. Ravi Kumar',spec:'Cardiologist',exp:10,avail:true,initials:'RK',fee:'₹800'},
+  {id:2,name:'Dr. Priya Sharma',spec:'Dermatologist',exp:8,avail:true,initials:'PS',fee:'₹600'},
+  {id:3,name:'Dr. Arjun Mehta',spec:'Orthopedic',exp:12,avail:true,initials:'AM',fee:'₹900'},
+  {id:4,name:'Dr. Sneha Reddy',spec:'Neurologist',exp:15,avail:false,initials:'SR',fee:'₹1200'},
+  {id:5,name:'Dr. Vikram Singh',spec:'Pediatrician',exp:7,avail:true,initials:'VS',fee:'₹500'},
+  {id:6,name:'Dr. Ananya Iyer',spec:'Dermatologist',exp:5,avail:true,initials:'AI',fee:'₹650'},
+];
+
+let state = {
+  user: null,
+  appointments: [],
+  profile: {},
+  selectedDocId: null,
+  specFilter: '',
+};
+
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(el=>el.classList.remove('active'));
+  const pg = document.getElementById('page-'+p);
+  if(pg) pg.classList.add('active');
+  const lnk = document.getElementById('nav-'+p) || document.getElementById('nav-'+p+'s') || document.getElementById('nav-myappts');
+  if(p==='myappointments') document.getElementById('nav-myappts').classList.add('active');
+  else if(p==='home') document.getElementById('nav-home').classList.add('active');
+  else if(p==='login') document.getElementById('nav-login').classList.add('active');
+  else if(p==='signup') document.getElementById('nav-signup').classList.add('active');
+  else if(p==='doctors') document.getElementById('nav-doctors').classList.add('active');
+  else if(p==='appointments') document.getElementById('nav-appointments').classList.add('active');
+  else if(p==='profile') document.getElementById('nav-profile').classList.add('active');
+  if(p==='doctors') renderDoctors();
+  if(p==='myappointments') renderMyAppointments();
+  if(p==='profile') loadProfileForm();
+  if(p==='appointments') populateDocDropdown();
+}
+
+function requireLogin(p){
+  if(!state.user){showToast('Please login first');showPage('login');return;}
+  showPage(p);
+}
+
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-password').value;
+  const al=document.getElementById('login-alert');
+  if(!email||!pass){al.innerHTML='<div class="alert alert-error">Please fill in all fields.</div>';return;}
+  state.user={email,name:state.profile.first?state.profile.first+' '+state.profile.last:email.split('@')[0]};
+  updateNavAuth();
+  showPage('home');
+  showToast('Welcome back!');
+}
+
+function doSignup(){
+  const first=document.getElementById('su-first').value.trim();
+  const last=document.getElementById('su-last').value.trim();
+  const email=document.getElementById('su-email').value.trim();
+  const phone=document.getElementById('su-phone').value.trim();
+  const dob=document.getElementById('su-dob').value;
+  const pass=document.getElementById('su-pass').value;
+  const pass2=document.getElementById('su-pass2').value;
+  const al=document.getElementById('signup-alert');
+  if(!first||!last||!email||!pass){al.innerHTML='<div class="alert alert-error">Please fill all required fields.</div>';return;}
+  if(pass.length<6){al.innerHTML='<div class="alert alert-error">Password must be at least 6 characters.</div>';return;}
+  if(pass!==pass2){al.innerHTML='<div class="alert alert-error">Passwords do not match.</div>';return;}
+  state.profile={first,last,email,phone,dob};
+  state.user={email,name:first+' '+last};
+  updateNavAuth();
+  document.getElementById('signup-alert').innerHTML='';
+  showPage('home');
+  showToast('Account created! Welcome, '+first+'!');
+}
+
+function logout(){
+  state.user=null;
+  updateNavAuth();
+  showPage('home');
+  showToast('Logged out successfully');
+}
+
+function updateNavAuth(){
+  const isLoggedIn=!!state.user;
+  document.getElementById('nav-auth-links').style.display=isLoggedIn?'none':'flex';
+  document.getElementById('nav-user-area').style.display=isLoggedIn?'flex':'none';
+}
+
+function renderDoctors(){
+  const q=(document.getElementById('doc-search').value||'').toLowerCase();
+  const spec=state.specFilter;
+  const list=doctors.filter(d=>{
+    const matchQ=!q||d.name.toLowerCase().includes(q)||d.spec.toLowerCase().includes(q);
+    const matchS=!spec||d.spec===spec;
+    return matchQ&&matchS;
+  });
+  const el=document.getElementById('doc-list');
+  if(!list.length){el.innerHTML='<div class="empty-state"><i class="ti ti-search-off" style="font-size:28px;margin-bottom:8px;display:block"></i>No doctors found</div>';return;}
+  el.innerHTML=list.map(d=>`
+    <div class="doc-card">
+      <div class="doc-avatar">${d.initials}</div>
+      <div class="doc-name">${d.name}</div>
+      <div class="doc-info"><span style="color:var(--color-text-primary);font-weight:500">Specialization:</span> ${d.spec}</div>
+      <div class="doc-info"><span style="color:var(--color-text-primary);font-weight:500">Experience:</span> ${d.exp} years</div>
+      <div class="doc-info"><span style="color:var(--color-text-primary);font-weight:500">Fee:</span> ${d.fee}</div>
+      <div style="margin:10px 0"><span class="badge ${d.avail?'badge-avail':'badge-busy'}">${d.avail?'Available':'Busy'}</span></div>
+      <button class="btn-primary" style="margin-top:4px" onclick="openBookModal(${d.id})" ${d.avail?'':' disabled style="opacity:0.5;cursor:not-allowed;margin-top:4px;background:#1a3a8f;color:#fff;border:none;padding:9px 20px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;width:100%"'}>Book Appointment</button>
+    </div>`).join('');
+}
+
+function filterDoctors(){renderDoctors();}
+
+function filterBySpec(spec){
+  state.specFilter=spec;
+  document.querySelectorAll('#spec-filters button').forEach(b=>{
+    b.style.background=b.dataset.spec===spec?'#1a3a8f':'transparent';
+    b.style.color=b.dataset.spec===spec?'#fff':'#1a3a8f';
+  });
+  renderDoctors();
+}
+
+function openBookModal(docId){
+  if(!state.user){showToast('Please login to book');showPage('login');return;}
+  state.selectedDocId=docId;
+  const doc=doctors.find(d=>d.id===docId);
+  document.getElementById('modal-doc-info').textContent=doc.name+' · '+doc.spec+' · '+doc.fee+' consultation';
+  document.getElementById('modal-date').value='';
+  document.getElementById('modal-time').value='';
+  document.getElementById('modal-reason').value='';
+  document.getElementById('modal-alert').innerHTML='';
+  document.getElementById('book-modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('book-modal').classList.remove('open');
+}
+
+function confirmModalBooking(){
+  const date=document.getElementById('modal-date').value;
+  const time=document.getElementById('modal-time').value;
+  const reason=document.getElementById('modal-reason').value.trim();
+  const al=document.getElementById('modal-alert');
+  if(!date||!time){al.innerHTML='<div class="alert alert-error">Please select date and time.</div>';return;}
+  const today=new Date().toISOString().split('T')[0];
+  if(date<today){al.innerHTML='<div class="alert alert-error">Please select a future date.</div>';return;}
+  const doc=doctors.find(d=>d.id===state.selectedDocId);
+  state.appointments.push({id:Date.now(),docId:doc.id,docName:doc.name,spec:doc.spec,date,time,reason:reason||'General consultation',status:'confirmed'});
+  closeModal();
+  showToast('Appointment booked with '+doc.name+'!');
+}
+
+function populateDocDropdown(){
+  const sel=document.getElementById('appt-doc');
+  sel.innerHTML='<option value="">-- Choose a doctor --</option>'+doctors.filter(d=>d.avail).map(d=>`<option value="${d.id}">${d.name} (${d.spec})</option>`).join('');
+}
+
+function bookAppointment(){
+  if(!state.user){showToast('Please login first');showPage('login');return;}
+  const docId=parseInt(document.getElementById('appt-doc').value);
+  const date=document.getElementById('appt-date').value;
+  const time=document.getElementById('appt-time').value;
+  const reason=document.getElementById('appt-reason').value.trim();
+  const al=document.getElementById('appt-alert');
+  if(!docId||!date||!time){al.innerHTML='<div class="alert alert-error">Please fill all required fields.</div>';return;}
+  const today=new Date().toISOString().split('T')[0];
+  if(date<today){al.innerHTML='<div class="alert alert-error">Please select a future date.</div>';return;}
+  const doc=doctors.find(d=>d.id===docId);
+  state.appointments.push({id:Date.now(),docId,docName:doc.name,spec:doc.spec,date,time,reason:reason||'General consultation',status:'confirmed'});
+  al.innerHTML='<div class="alert alert-success"><i class="ti ti-check" style="margin-right:6px"></i>Appointment booked successfully!</div>';
+  document.getElementById('appt-doc').value='';
+  document.getElementById('appt-date').value='';
+  document.getElementById('appt-time').value='';
+  document.getElementById('appt-reason').value='';
+  showToast('Appointment confirmed!');
+}
+
+function renderMyAppointments(){
+  const total=state.appointments.length;
+  const confirmed=state.appointments.filter(a=>a.status==='confirmed').length;
+  const cancelled=state.appointments.filter(a=>a.status==='cancelled').length;
+  document.getElementById('appt-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#27500A">${confirmed}</div><div class="stat-label">Confirmed</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#A32D2D">${cancelled}</div><div class="stat-label">Cancelled</div></div>`;
+  const el=document.getElementById('my-appt-list');
+  if(!state.appointments.length){
+    el.innerHTML='<div class="empty-state"><i class="ti ti-calendar-off" style="font-size:32px;margin-bottom:10px;display:block"></i>No appointments yet.<br><a onclick="showPage(\'doctors\')" style="color:#185FA5;cursor:pointer;font-size:13px">Find a doctor →</a></div>';
+    return;
+  }
+  const sorted=[...state.appointments].sort((a,b)=>a.date<b.date?-1:1);
+  el.innerHTML=sorted.map(a=>`
+    <div class="appt-card">
+      <div class="appt-info">
+        <div class="appt-doc">${a.docName}</div>
+        <div class="appt-meta">${a.spec} · ${a.date} · ${a.time}</div>
+        <div class="appt-meta" style="margin-top:2px">Reason: ${a.reason}</div>
+      </div>
+      <div style="text-align:right;white-space:nowrap">
+        <span class="status-badge status-${a.status}">${a.status}</span>
+        ${a.status==='confirmed'?`<br><button class="btn-danger" style="margin-top:8px;font-size:12px;padding:6px 12px" onclick="cancelAppointment(${a.id})">Cancel</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function cancelAppointment(id){
+  const a=state.appointments.find(x=>x.id===id);
+  if(a){a.status='cancelled';}
+  renderMyAppointments();
+  showToast('Appointment cancelled');
+}
+
+function loadProfileForm(){
+  const p=state.profile;
+  document.getElementById('p-first').value=p.first||'';
+  document.getElementById('p-last').value=p.last||'';
+  document.getElementById('p-email').value=p.email||(state.user?state.user.email:'')||'';
+  document.getElementById('p-phone').value=p.phone||'';
+  document.getElementById('p-dob').value=p.dob||'';
+  document.getElementById('p-blood').value=p.blood||'';
+  document.getElementById('p-notes').value=p.notes||'';
+  const name=(p.first&&p.last)?p.first+' '+p.last:(state.user?state.user.name:'');
+  document.getElementById('profile-name').textContent=name||'Your Profile';
+  document.getElementById('profile-email-display').textContent=p.email||'';
+  const init=p.first&&p.last?p.first[0]+p.last[0]:(name?name[0]:'?');
+  document.getElementById('profile-initials').textContent=init.toUpperCase();
+}
+
+function saveProfile(){
+  const first=document.getElementById('p-first').value.trim();
+  const last=document.getElementById('p-last').value.trim();
+  if(!first||!last){document.getElementById('profile-alert').innerHTML='<div class="alert alert-error">Name is required.</div>';return;}
+  state.profile={...state.profile,first,last,email:document.getElementById('p-email').value,phone:document.getElementById('p-phone').value,dob:document.getElementById('p-dob').value,blood:document.getElementById('p-blood').value,notes:document.getElementById('p-notes').value};
+  if(state.user) state.user.name=first+' '+last;
+  document.getElementById('profile-alert').innerHTML='<div class="alert alert-success">Profile saved successfully!</div>';
+  loadProfileForm();
+  showToast('Profile updated!');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+const todayStr=new Date().toISOString().split('T')[0];
+document.getElementById('appt-date').min=todayStr;
+document.getElementById('modal-date').min=todayStr;
+renderDoctors();
+populateDocDropdown();
+</script>
