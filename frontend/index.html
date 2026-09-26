@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MediBook — Doctor Appointment Booking System</title>
+<meta name="description" content="MediBook: a role-based doctor appointment booking system with patient, doctor and admin panels. Academic DBMS project frontend.">
+<link rel="stylesheet" href="src/css/base.css">
+<link rel="stylesheet" href="src/css/components.css">
+<link rel="stylesheet" href="src/css/layout.css">
+</head>
+<body>
+
+<!-- ======================================================================
+     PUBLIC SITE — landing, login, register
+     ====================================================================== -->
+<div id="public-site">
+
+  <header class="site-header" id="site-header">
+    <div class="inner">
+      <a class="brand" data-go-public="home">
+        <span class="mark" id="brand-mark"></span>
+        MediBook
+      </a>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false"></button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <a data-go-public="home" class="active">Home</a>
+        <a data-scroll="doctors-preview">Find doctors</a>
+        <a data-scroll="features">Features</a>
+        <a data-scroll="panels">Panels</a>
+      </nav>
+
+      <div class="site-actions">
+        <button class="btn btn-secondary btn-sm" data-go-public="login">Log in</button>
+        <button class="btn btn-primary btn-sm" data-go-public="register">Register</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------------------------------------------------------------- HOME -->
+  <main id="screen-home" class="screen active">
+    <div class="public-body">
+
+      <section class="hero">
+        <div>
+          <h1>Book the right doctor, without the phone calls.</h1>
+          <p>MediBook lets patients find a specialist and reserve a slot in under a minute,
+             gives doctors a single place to manage their day, and gives the clinic
+             administrator a clear view of everything happening across the system.</p>
+          <div class="btn-group">
+            <button class="btn btn-primary btn-lg" data-go-public="register">Create a patient account</button>
+            <button class="btn btn-secondary btn-lg" data-go-public="login">Log in to a demo panel</button>
+          </div>
+          <p class="hero-note">Demo accounts for all three roles are listed on the login page.</p>
+        </div>
+
+        <!-- A still of the product's core moment rather than a decorative graphic -->
+        <aside class="hero-preview" aria-label="Example of the booking screen">
+          <div class="row" style="gap:12px">
+            <span class="avatar">RK</span>
+            <div class="grow">
+              <div class="strong">Dr. Ravi Kumar</div>
+              <div class="small muted">Cardiologist · 10 years</div>
+            </div>
+            <span class="badge badge-available"><span class="dot"></span>Available</span>
+          </div>
+          <hr class="rule" style="margin:14px 0">
+          <div class="small muted">Pick a time on Thursday</div>
+          <div class="slot-row">
+            <span class="slot taken">09:00</span>
+            <span class="slot">10:00</span>
+            <span class="slot picked">11:00</span>
+            <span class="slot">12:00</span>
+          </div>
+          <div class="row-between mt-3">
+            <span class="small muted">Consultation fee</span>
+            <span class="strong num">₹800</span>
+          </div>
+          <button class="btn btn-primary btn-block mt-2" data-go-public="login">Confirm booking</button>
+        </aside>
+      </section>
+
+      <!-- ------------------------------------------------- DOCTOR PREVIEW -->
+      <section class="section" id="doctors-preview">
+        <h2>Find doctors</h2>
+        <p class="lead">Search by name or filter by specialization. Log in to book a slot.</p>
+
+        <div class="toolbar">
+          <div class="search">
+            <span id="public-search-icon"></span>
+            <input type="search" id="public-doctor-search" placeholder="Search by name or specialization" aria-label="Search doctors">
+          </div>
+        </div>
+        <div class="chips mb-3" id="public-spec-chips"></div>
+        <div id="public-doctor-list" class="doctor-grid" aria-live="polite"></div>
+      </section>
+
+      <!-- -------------------------------------------------------- FEATURES -->
+      <section class="section" id="features">
+        <h2>What the system does</h2>
+        <p class="lead">Scope is deliberately limited to discovery, booking and appointment management.</p>
+        <div class="feature-grid" id="feature-grid"></div>
+      </section>
+
+      <!-- ---------------------------------------------------------- PANELS -->
+      <section class="section" id="panels">
+        <h2>Three panels, one system</h2>
+        <p class="lead">Each role signs in through the same form and lands on a different dashboard.
+           A patient never sees doctor management; a doctor never sees system-wide statistics.</p>
+        <div class="role-grid" id="role-grid"></div>
+      </section>
+
+    </div>
+
+    <footer class="site-footer">
+      <div class="inner">
+        <span>MediBook — academic DBMS project. Connected to MySQL database via Express.js REST API.</span>
+        <span>Full persistence, multi-role authentication, and real-time scheduling enabled.</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- --------------------------------------------------------------- LOGIN -->
+  <div id="screen-login" class="screen">
+    <div class="auth-body">
+      <h1 class="center">Log in to MediBook</h1>
+      <p class="center muted mt-1 mb-3">Choose the panel you want to see, then use its demo account.</p>
+
+      <div class="card" id="login-form">
+        <div class="alert-slot"></div>
+
+        <div class="field">
+          <label for="login-email">Email address</label>
+          <input type="email" id="login-email" data-field="email" placeholder="you@example.com" autocomplete="username">
+          <div class="field-error"></div>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" data-field="password" placeholder="Enter your password" autocomplete="current-password">
+          <div class="field-error"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="login-submit">Log in</button>
+
+        <hr class="rule">
+        <p class="center small muted">
+          New patient? <a data-go-public="register">Create an account</a>
+        </p>
+      </div>
+
+      <div class="card mt-3" id="demo-accounts">
+        <div class="row-between mb-2">
+          <h3 style="font-size:14px">Demo accounts</h3>
+          <span class="badge badge-available"><span class="dot"></span>Live Database</span>
+        </div>
+        <p class="small muted mb-2">
+          Select any role below to pre-fill credentials verified in MySQL. You can also log in with any newly registered patient account.
+        </p>
+        <div id="demo-account-list" class="stack"></div>
+      </div>
+
+      <p class="center small mt-3"><a data-go-public="home">Back to home</a></p>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ REGISTER -->
+  <div id="screen-register" class="screen">
+    <div class="auth-body wide">
+      <h1 class="center">Create a patient account</h1>
+      <p class="center muted mt-1 mb-3">Registration is available to patients. Doctor and admin accounts are created by the administrator.</p>
+
+      <div class="card" id="register-form">
+        <div class="alert-slot"></div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="reg-first">First name</label>
+            <input type="text" id="reg-first" data-field="first_name" placeholder="Rahul">
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="reg-last">Last name</label>
+            <input type="text" id="reg-last" data-field="last_name" placeholder="Sharma">
+            <div class="field-error"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="reg-email">Email address</label>
+          <input type="email" id="reg-email" data-field="email" placeholder="you@example.com" autocomplete="email">
+          <div class="field-error"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="reg-phone">Phone number</label>
+            <input type="tel" id="reg-phone" data-field="phone" placeholder="+91 98765 43210">
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="reg-dob">Date of birth</label>
+            <input type="date" id="reg-dob" data-field="date_of_birth">
+            <div class="field-error"></div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="reg-pass">Password</label>
+            <input type="password" id="reg-pass" data-field="password" placeholder="At least 6 characters" autocomplete="new-password">
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="reg-pass2">Confirm password</label>
+            <input type="password" id="reg-pass2" data-field="confirm_password" placeholder="Repeat your password" autocomplete="new-password">
+            <div class="field-error"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="register-submit">Create account</button>
+
+        <hr class="rule">
+        <p class="center small muted">Already registered? <a data-go-public="login">Log in</a></p>
+      </div>
+
+      <p class="center small mt-3"><a data-go-public="home">Back to home</a></p>
+    </div>
+  </div>
+
+</div><!-- /#public-site -->
+
+
+<!-- ======================================================================
+     DASHBOARD SHELL — shared by patient, doctor and admin
+     ====================================================================== -->
+<div class="app-shell" id="app-shell">
+
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span id="sidebar-mark"></span> MediBook
+    </div>
+    <div class="sidebar-role" id="sidebar-role"></div>
+    <nav class="side-nav" id="side-nav" aria-label="Panel"></nav>
+    <div class="sidebar-foot">
+      <button id="logout-btn"><span id="logout-icon"></span> Log out</button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu"></button>
+      <h2 id="topbar-title">Dashboard</h2>
+      <div class="who">
+        <div style="text-align:right">
+          <div class="name" id="topbar-name"></div>
+          <div class="role" id="topbar-role"></div>
+        </div>
+        <span class="avatar avatar-sm" id="topbar-avatar"></span>
+      </div>
+    </header>
+
+    <main class="view" id="view" aria-live="polite"></main>
+  </div>
+</div>
+
+
+<!-- Shared overlays -->
+<div class="modal-backdrop" id="modal-root" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal"></div>
+</div>
+<div id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+
+<!-- Load order matters: data → helpers → api → views → app -->
+<script src="src/js/data.js"></script>
+<script src="src/js/ui.js"></script>
+<script src="src/js/api.js"></script>
+<script src="src/js/views.patient.js"></script>
+<script src="src/js/views.doctor.js"></script>
+<script src="src/js/views.admin.js"></script>
+<script src="src/js/app.js"></script>
+</body>
+</html>
