@@ -82,12 +82,23 @@ const App = (() => {
   }
 
   function logout() {
+    Api.logout();
     session = null;
     current = null;
     el.view.innerHTML = '';
     Modal.close();
     showPublic('home');
-    Toast.show('Logged out');
+    Toast.show('Logged out. Session token cleared.');
+  }
+
+  function handleAuthFailure(message) {
+    Api.clearToken();
+    session = null;
+    current = null;
+    if (el.view) el.view.innerHTML = '';
+    Modal.close();
+    showPublic('login');
+    Toast.bad(message || 'Session expired. Please log in again.');
   }
 
   /* Called after a profile edit changes the display name. */
@@ -352,12 +363,266 @@ const App = (() => {
 
     document.getElementById('register-submit').addEventListener('click', submitRegister);
     registerForm.addEventListener('keydown', e => { if (e.key === 'Enter') submitRegister(); });
+
+    /* Microservices and Token explainer triggers */
+    document.getElementById('btn-show-token-info')?.addEventListener('click', openTokenExplainerModal);
+    document.getElementById('btn-header-microservices')?.addEventListener('click', openMicroservicesMonitorModal);
+    document.getElementById('btn-footer-microservices')?.addEventListener('click', openMicroservicesMonitorModal);
+    document.getElementById('btn-topbar-token')?.addEventListener('click', openTokenExplainerModal);
+    document.getElementById('btn-topbar-microservices')?.addEventListener('click', openMicroservicesMonitorModal);
+  }
+
+  /* ======================================================================
+     JWT Token Explainer Modal
+     ====================================================================== */
+  function openTokenExplainerModal() {
+    const token = Api.getToken();
+    const claims = Api.decodeToken(token);
+
+    let tokenBody = '';
+    if (token && claims) {
+      const parts = token.split('.');
+      const expDate = claims.exp ? new Date(claims.exp * 1000).toLocaleString('en-IN') : 'N/A';
+      const iatDate = claims.iat ? new Date(claims.iat * 1000).toLocaleString('en-IN') : 'N/A';
+      const timeLeftSec = claims.exp ? Math.max(0, Math.round(claims.exp - Date.now() / 1000)) : 0;
+      const minsLeft = Math.floor(timeLeftSec / 60);
+
+      tokenBody = `
+        <div class="card card-tight mb-3" style="background:#0f172a;color:#e2e8f0;font-family:monospace;font-size:11.5px;overflow-x:auto;padding:12px;border-radius:6px;word-break:break-all;">
+          <div style="color:#94a3b8;margin-bottom:4px">// Raw Encoded JWT (Header.Payload.Signature):</div>
+          <span style="color:#f87171">${Util.esc(parts[0])}</span>.<span style="color:#60a5fa">${Util.esc(parts[1])}</span>.<span style="color:#34d399">${Util.esc(parts[2])}</span>
+        </div>
+
+        <div class="row-between mb-2">
+          <span class="badge badge-available"><span class="dot"></span>Token Active (${minsLeft}m remaining)</span>
+          <button class="btn btn-secondary btn-sm" id="btn-copy-jwt">Copy Token</button>
+        </div>
+
+        <div class="panel-title">Decoded JWT Payload (Claims)</div>
+        <table class="table" style="font-size:12.5px;margin-bottom:12px">
+          <tbody>
+            <tr><td><strong>Subject ID (sub)</strong></td><td><code>${claims.id}</code></td></tr>
+            <tr><td><strong>Role</strong></td><td><span class="badge badge-neutral">${claims.role}</span></td></tr>
+            <tr><td><strong>User Name</strong></td><td>${Util.esc(claims.name || '—')}</td></tr>
+            <tr><td><strong>Email</strong></td><td>${Util.esc(claims.email || '—')}</td></tr>
+            <tr><td><strong>Issued At (iat)</strong></td><td>${iatDate}</td></tr>
+            <tr><td><strong>Expires At (exp)</strong></td><td>${expDate}</td></tr>
+            <tr><td><strong>Signing Algorithm</strong></td><td><code>HMAC-SHA256 (HS256)</code></td></tr>
+          </tbody>
+        </table>
+      `;
+    } else {
+      tokenBody = `
+        <div class="card card-tight mb-3" style="background:var(--navy-050);border-color:var(--navy-200);">
+          <div class="small muted mb-1">Status: No active session token stored.</div>
+          <p class="small mb-0">Log in with any account (e.g. Rahul Sharma under Demo Accounts) to inspect a live cryptographically generated JWT token.</p>
+        </div>
+      `;
+    }
+
+    Modal.open({
+      title: 'JWT Tokenization Architecture',
+      subtitle: 'Stateless Token-Based Authentication in MediBook',
+      wide: true,
+      body: `
+        <div class="alert-slot"></div>
+        <p class="small muted mb-3">
+          <strong>Tokenization</strong> replaces traditional server-side session cookies with digitally signed <strong>JSON Web Tokens (JWT)</strong>.
+          The client authenticates once with the <strong>Auth Microservice (Port 5001)</strong>, then transmits the signed bearer token in the <code>Authorization: Bearer &lt;token&gt;</code> header to the <strong>Appointment Microservice (Port 5002)</strong>.
+        </p>
+
+        <div class="card card-tight mb-3" style="background:var(--sunken);">
+          <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Three-Part Token Structure:</div>
+          <div style="font-size:12px;line-height:1.5;">
+            1. <strong style="color:#b91c1c">Header (Red):</strong> Declares signing algorithm (<code>HS256</code>) & token type (<code>JWT</code>).<br>
+            2. <strong style="color:#1d4ed8">Payload (Blue):</strong> Cryptographically verified claims (Patient ID, Role, Email, Expiry).<br>
+            3. <strong style="color:#047857">Signature (Green):</strong> Secret cryptographic hash ensuring tamper-proofing.
+          </div>
+        </div>
+
+        ${tokenBody}
+
+        <div class="panel-title mt-3">Microservices Security Contract</div>
+        <p class="small muted mb-0">
+          Because the <strong>Appointment Microservice</strong> verifies token signatures statelessly using the shared secret, it requires <strong>zero database queries</strong> and <strong>zero network calls</strong> to the Auth Service to authenticate each request!
+        </p>
+      `,
+      actions: [
+        { label: 'Close', variant: 'secondary' }
+      ],
+      onMount: (scope) => {
+        const copyBtn = scope.querySelector('#btn-copy-jwt');
+        if (copyBtn && token) {
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(token);
+            copyBtn.textContent = 'Copied!';
+            Toast.ok('JWT token copied to clipboard');
+            setTimeout(() => { copyBtn.textContent = 'Copy Token'; }, 2000);
+          });
+        }
+      }
+    });
+  }
+
+  /* ======================================================================
+     Microservices Topology & Circuit Breaker Monitor Modal
+     ====================================================================== */
+  async function openMicroservicesMonitorModal() {
+    Modal.open({
+      title: 'Microservices Topology & Resilience Monitor',
+      subtitle: 'API Gateway & Circuit Breakers (Ports 5000, 5001, 5002)',
+      wide: true,
+      body: `
+        <div id="ms-monitor-content">
+          <p class="small muted">Querying Gateway & Microservices...</p>
+        </div>
+      `,
+      actions: [
+        { label: 'Close', variant: 'secondary' }
+      ],
+      onMount: async (scope) => {
+        const container = scope.querySelector('#ms-monitor-content');
+
+        async function refresh() {
+          container.innerHTML = '<p class="small muted">Querying Gateway & Microservices...</p>';
+          try {
+            const [health, cb] = await Promise.all([
+              Api.getMicroservicesHealth(),
+              Api.getCircuitBreakers()
+            ]);
+
+            const gw = health.gateway || { status: 'running', port: 5000 };
+            const services = health.services || [];
+            const authSvc = services.find(s => s.name && s.name.includes('Auth')) || { status: 'unknown', latencyMs: 0 };
+            const apptSvc = services.find(s => s.name && s.name.includes('Appointment')) || { status: 'unknown', latencyMs: 0 };
+
+            const authCb = cb?.circuitBreakers?.authService || { state: 'CLOSED', failureCount: 0, failureThreshold: 3, successCount: 0 };
+            const apptCb = cb?.circuitBreakers?.appointmentService || { state: 'CLOSED', failureCount: 0, failureThreshold: 3, successCount: 0 };
+
+            container.innerHTML = `
+              <div class="card card-tight mb-3" style="background:var(--navy-050);border-color:var(--navy-200);">
+                <div class="row-between mb-1">
+                  <strong>Concept 1: API Gateway Pattern (Port 5000)</strong>
+                  <span class="badge badge-available"><span class="dot"></span>Reverse Proxy Active</span>
+                </div>
+                <p class="small muted mb-0">
+                  Single entry point handling dynamic path routing, distributed request correlation tracing (<code>x-request-id</code>), and cross-cutting security.
+                </p>
+              </div>
+
+              <div class="panel-title">Service Topology & Live Health</div>
+              <div class="stat-grid mb-3" style="grid-template-columns:repeat(3, 1fr);">
+                <div class="stat ${gw.status === 'running' ? 'is-ok' : 'is-bad'}">
+                  <div class="stat-value" style="font-size:16px;">API Gateway</div>
+                  <div class="stat-label">Port 5000 · <span class="badge badge-available">Running</span></div>
+                </div>
+                <div class="stat ${authSvc.status === 'running' ? 'is-ok' : 'is-bad'}">
+                  <div class="stat-value" style="font-size:16px;">Auth Service</div>
+                  <div class="stat-label">Port 5001 · ${authSvc.status === 'running' ? '<span class="badge badge-available">Online</span>' : '<span class="badge badge-cancelled">Offline</span>'}</div>
+                  <div class="tiny muted mt-1">Latency: ${authSvc.latencyMs || 0}ms</div>
+                </div>
+                <div class="stat ${apptSvc.status === 'running' ? 'is-ok' : 'is-bad'}">
+                  <div class="stat-value" style="font-size:16px;">Appointment Svc</div>
+                  <div class="stat-label">Port 5002 · ${apptSvc.status === 'running' ? '<span class="badge badge-available">Online</span>' : '<span class="badge badge-cancelled">Offline</span>'}</div>
+                  <div class="tiny muted mt-1">Latency: ${apptSvc.latencyMs || 0}ms</div>
+                </div>
+              </div>
+
+              <div class="card card-tight mb-3" style="border-left:3px solid var(--accent);">
+                <div class="row-between mb-2">
+                  <strong>Concept 2: Circuit Breaker Pattern (Fault Tolerance)</strong>
+                  <button class="btn btn-ghost btn-sm" id="btn-refresh-ms">🔄 Refresh</button>
+                </div>
+                <p class="small muted mb-2">
+                  Protects against cascading system failures when a microservice slows down or fails. If errors reach threshold (3), the breaker trips to <strong>OPEN</strong>, failing fast without locking up gateway connection pools.
+                </p>
+
+                <table class="table" style="font-size:12.5px;">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                      <th>Circuit State</th>
+                      <th>Failures</th>
+                      <th>Successes</th>
+                      <th>Interactive Demo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Auth Service</strong></td>
+                      <td>
+                        <span class="badge ${authCb.state === 'CLOSED' ? 'badge-available' : authCb.state === 'OPEN' ? 'badge-cancelled' : 'badge-pending'}">
+                          <span class="dot"></span>${authCb.state}
+                        </span>
+                      </td>
+                      <td>${authCb.failureCount} / ${authCb.failureThreshold}</td>
+                      <td>${authCb.successCount}</td>
+                      <td>
+                        ${authCb.state === 'CLOSED'
+                          ? '<button class="btn btn-danger btn-sm" id="btn-trip-auth" style="padding:2px 8px;font-size:11px;">Trip Breaker</button>'
+                          : '<button class="btn btn-ok btn-sm" id="btn-reset-auth" style="padding:2px 8px;font-size:11px;">Reset to CLOSED</button>'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Appointment Service</strong></td>
+                      <td>
+                        <span class="badge ${apptCb.state === 'CLOSED' ? 'badge-available' : apptCb.state === 'OPEN' ? 'badge-cancelled' : 'badge-pending'}">
+                          <span class="dot"></span>${apptCb.state}
+                        </span>
+                      </td>
+                      <td>${apptCb.failureCount} / ${apptCb.failureThreshold}</td>
+                      <td>${apptCb.successCount}</td>
+                      <td>
+                        ${apptCb.state === 'CLOSED'
+                          ? '<button class="btn btn-danger btn-sm" id="btn-trip-appt" style="padding:2px 8px;font-size:11px;">Trip Breaker</button>'
+                          : '<button class="btn btn-ok btn-sm" id="btn-reset-appt" style="padding:2px 8px;font-size:11px;">Reset to CLOSED</button>'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            `;
+
+            scope.querySelector('#btn-refresh-ms')?.addEventListener('click', refresh);
+
+            scope.querySelector('#btn-trip-auth')?.addEventListener('click', async () => {
+              await Api.tripCircuitBreaker('auth');
+              Toast.bad('Auth Service Circuit Breaker tripped to OPEN!');
+              refresh();
+            });
+
+            scope.querySelector('#btn-reset-auth')?.addEventListener('click', async () => {
+              await Api.resetCircuitBreaker('auth');
+              Toast.ok('Auth Service Circuit Breaker reset to CLOSED');
+              refresh();
+            });
+
+            scope.querySelector('#btn-trip-appt')?.addEventListener('click', async () => {
+              await Api.tripCircuitBreaker('appointment');
+              Toast.bad('Appointment Service Circuit Breaker tripped to OPEN!');
+              refresh();
+            });
+
+            scope.querySelector('#btn-reset-appt')?.addEventListener('click', async () => {
+              await Api.resetCircuitBreaker('appointment');
+              Toast.ok('Appointment Service Circuit Breaker reset to CLOSED');
+              refresh();
+            });
+
+          } catch (err) {
+            container.innerHTML = `<div class="card card-tight" style="color:var(--bad-fg);">Microservices telemetry query note: ${Util.esc(err.message)}</div>`;
+          }
+        }
+
+        refresh();
+      }
+    });
   }
 
   /* ======================================================================
      Boot
      ====================================================================== */
-  function init() {
+  async function init() {
     el.header      = document.getElementById('site-header');
     el.navToggle   = document.getElementById('nav-toggle');
     el.sidebar     = document.getElementById('sidebar');
@@ -394,13 +659,29 @@ const App = (() => {
     document.getElementById('sidebar-toggle').addEventListener('click', openDrawer);
     el.scrim.addEventListener('click', closeDrawer);
 
+    // Auto-restore session from stored JWT token
+    const token = Api.getToken();
+    if (token) {
+      try {
+        const verifiedUser = await Api.verifyToken();
+        if (verifiedUser && verifiedUser.role) {
+          enterApp(verifiedUser);
+          Toast.ok(`Welcome back! Session restored via JWT token.`);
+          return;
+        }
+      } catch (e) {
+        Api.clearToken();
+      }
+    }
+
     showPublic('home');
   }
 
   document.addEventListener('DOMContentLoaded', init);
 
   return {
-    go, logout, refreshIdentity, showPublic,
+    go, logout, refreshIdentity, showPublic, handleAuthFailure,
+    openTokenExplainerModal, openMicroservicesMonitorModal,
     get session() { return session; },
     set session(v) { session = v; },
     get current() { return current; }

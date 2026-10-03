@@ -72,11 +72,15 @@ const AdminView = (() => {
               <button class="btn btn-primary btn-block" data-goto="doctors">${Icon.get('stethoscope', 'icon icon-sm')} Doctors</button>
               <button class="btn btn-secondary btn-block" data-goto="patients">${Icon.get('users', 'icon icon-sm')} Patients</button>
               <button class="btn btn-secondary btn-block" data-goto="appointments">${Icon.get('calendar', 'icon icon-sm')} Appointments</button>
+              <button class="btn btn-secondary btn-block" id="btn-admin-microservices" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                <span class="dot" style="background:#10b981;"></span> Microservices & Circuit Breakers
+              </button>
             </div>
           </section>
         </aside>
       </div>`;
 
+    view.querySelector('#btn-admin-microservices')?.addEventListener('click', App.openMicroservicesMonitorModal);
     Util.onClick(view, '[data-goto]', el => App.go(el.dataset.goto));
   }
 

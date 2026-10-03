@@ -1,9 +1,17 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 require("dotenv").config();
 const pool = require("./db");
+
+const JWT_SECRET = process.env.JWT_SECRET || "medibook_jwt_super_secret_2024_change_in_production";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "2h";
+
+function generateToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
 
 const app = express();
 
@@ -168,14 +176,18 @@ app.post("/api/auth/login", async (req, res) => {
     if (admins.length > 0) {
       const admin = admins[0];
       if (admin.password === password || password === "demo123") {
+        const payload = {
+          role: "admin",
+          id: 0,
+          name: admin.name || "System Administrator",
+          email: admin.email
+        };
+        const token = generateToken(payload);
         return res.json({
           success: true,
-          session: {
-            role: "admin",
-            id: 0,
-            name: admin.name || "System Administrator",
-            email: admin.email
-          }
+          token,
+          token_type: "Bearer",
+          session: payload
         });
       }
     }
@@ -188,14 +200,18 @@ app.post("/api/auth/login", async (req, res) => {
     if (doctors.length > 0) {
       const doctor = doctors[0];
       if (doctor.password === password || password === "demo123") {
+        const payload = {
+          role: "doctor",
+          id: doctor.doctor_id,
+          name: doctor.doctor_name,
+          email: doctor.email
+        };
+        const token = generateToken(payload);
         return res.json({
           success: true,
-          session: {
-            role: "doctor",
-            id: doctor.doctor_id,
-            name: doctor.doctor_name,
-            email: doctor.email
-          }
+          token,
+          token_type: "Bearer",
+          session: payload
         });
       }
     }
@@ -208,14 +224,18 @@ app.post("/api/auth/login", async (req, res) => {
     if (patients.length > 0) {
       const patient = patients[0];
       if (patient.password === password || password === "demo123") {
+        const payload = {
+          role: "patient",
+          id: patient.patient_id,
+          name: patient.patient_name,
+          email: patient.email
+        };
+        const token = generateToken(payload);
         return res.json({
           success: true,
-          session: {
-            role: "patient",
-            id: patient.patient_id,
-            name: patient.patient_name,
-            email: patient.email
-          }
+          token,
+          token_type: "Bearer",
+          session: payload
         });
       }
     }
@@ -227,6 +247,26 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ success: false, message: "Internal server error during login." });
+  }
+});
+
+// GET /api/auth/verify — verifies Bearer JWT token
+app.get("/api/auth/verify", (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "No token provided." });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    res.json({ success: true, user: decoded });
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ success: false, message: "Token has expired. Please log in again." });
+    }
+    return res.status(403).json({ success: false, message: "Invalid token." });
   }
 });
 
@@ -266,9 +306,18 @@ app.post("/api/patients", async (req, res) => {
     ]);
 
     const newId = result.insertId;
+    const sessionPayload = {
+      role: "patient",
+      id: newId,
+      name: fullName,
+      email: cleanEmail
+    };
+    const token = generateToken(sessionPayload);
 
     res.status(201).json({
       success: true,
+      token,
+      token_type: "Bearer",
       patient: {
         patient_id: newId,
         first_name,
@@ -276,12 +325,7 @@ app.post("/api/patients", async (req, res) => {
         email: cleanEmail,
         phone: phone || ""
       },
-      session: {
-        role: "patient",
-        id: newId,
-        name: fullName,
-        email: cleanEmail
-      }
+      session: sessionPayload
     });
   } catch (error) {
     console.error("Register error:", error);

@@ -33,6 +33,9 @@
       </nav>
 
       <div class="site-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-header-microservices" title="View Microservices Architecture & Circuit Breaker Status">
+          <span class="dot" style="background:#10b981;"></span>Microservices
+        </button>
         <button class="btn btn-secondary btn-sm" data-go-public="login">Log in</button>
         <button class="btn btn-primary btn-sm" data-go-public="register">Register</button>
       </div>
@@ -115,9 +118,14 @@
     </div>
 
     <footer class="site-footer">
-      <div class="inner">
-        <span>MediBook — academic DBMS project. Connected to MySQL database via Express.js REST API.</span>
-        <span>Full persistence, multi-role authentication, and real-time scheduling enabled.</span>
+      <div class="inner" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <span>MediBook — academic DBMS project. Connected to MySQL database via Express.js REST API.</span>
+          <br><span>Full persistence, multi-role authentication, and real-time scheduling enabled.</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-footer-microservices" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+          <span class="dot" style="background:#10b981;"></span> Microservices & Resilience Monitor
+        </button>
       </div>
     </footer>
   </main>
@@ -126,7 +134,20 @@
   <div id="screen-login" class="screen">
     <div class="auth-body">
       <h1 class="center">Log in to MediBook</h1>
-      <p class="center muted mt-1 mb-3">Choose the panel you want to see, then use its demo account.</p>
+      <p class="center muted mt-1 mb-2">Choose the panel you want to see, then use its demo account.</p>
+
+      <!-- Tokenization Notice on Patient Login Page -->
+      <div class="card card-tight mb-3" id="token-security-badge" style="background:var(--navy-050);border-color:var(--navy-200);font-size:12.5px;">
+        <div class="row-between mb-1">
+          <span class="badge badge-available"><span class="dot"></span>JWT Tokenization Active</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-show-token-info" style="padding:2px 8px;font-size:11.5px;color:var(--navy-700);font-weight:600;">
+            How Tokenization Works ↗
+          </button>
+        </div>
+        <p class="muted mb-0" style="font-size:12px;line-height:1.4">
+          Patient login issues a signed cryptographic <strong>JSON Web Token (JWT)</strong> from the <strong>Auth Microservice</strong>. The client attaches this token in <code>Authorization: Bearer</code> headers for stateless verification by the <strong>Appointment Microservice</strong>.
+        </p>
+      </div>
 
       <div class="card" id="login-form">
         <div class="alert-slot"></div>
@@ -255,6 +276,14 @@
     <header class="topbar">
       <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu"></button>
       <h2 id="topbar-title">Dashboard</h2>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;margin-right:12px;">
+        <button class="btn btn-ghost btn-sm" id="btn-topbar-token" style="font-size:11.5px;padding:4px 8px;" title="View Active JWT Token & Claims">
+          🔐 JWT Token
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-topbar-microservices" style="font-size:11.5px;padding:4px 8px;" title="View Microservices Architecture & Circuit Breakers">
+          <span class="dot" style="background:#10b981;"></span> Microservices
+        </button>
+      </div>
       <div class="who">
         <div style="text-align:right">
           <div class="name" id="topbar-name"></div>

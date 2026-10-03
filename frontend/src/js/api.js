@@ -4,6 +4,11 @@
 
    Fully integrated with the Node.js/Express + MySQL backend!
    Every function makes real HTTP requests via fetch() to the Express REST API.
+
+   JWT Authentication:
+   - On login/register, a JWT token is returned and stored in sessionStorage.
+   - Every subsequent request includes: Authorization: Bearer <token>
+   - On 401 (expired/invalid), the user is automatically logged out.
    ========================================================================== */
 
 const Api = (() => {
@@ -26,12 +31,40 @@ const Api = (() => {
 
   const BASE_URL = resolveBaseUrl();
 
-  /* Helper to perform fetch requests with JSON parsing and standardized error handling */
+  // ========================================================================
+  // TOKEN STORAGE — sessionStorage keeps token for this browser tab session.
+  // Using sessionStorage (not localStorage) so the token clears when the
+  // browser tab is closed, which is appropriate for a healthcare demo app.
+  // ========================================================================
+  const TOKEN_KEY = 'medibook_jwt_token';
+
+  function saveToken(token) {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+  }
+
+  function getToken() {
+    return sessionStorage.getItem(TOKEN_KEY);
+  }
+
+  function clearToken() {
+    sessionStorage.removeItem(TOKEN_KEY);
+  }
+
+  // ========================================================================
+  // HTTP REQUEST HELPER
+  // Automatically attaches Authorization: Bearer <token> header when a token
+  // is stored. Handles 401 (expired) by logging the user out gracefully.
+  // ========================================================================
   async function request(endpoint, options = {}) {
     const url = `${BASE_URL}${endpoint}`;
+
+    const token = getToken();
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
     const config = {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...(options.headers || {})
       },
       ...options
@@ -40,6 +73,16 @@ const Api = (() => {
     try {
       const response = await fetch(url, config);
       const data = await response.json().catch(() => ({}));
+
+      // 401 = expired or missing token → auto-logout
+      if (response.status === 401) {
+        clearToken();
+        // Notify the app to log the user out
+        if (typeof App !== 'undefined' && App.handleAuthFailure) {
+          App.handleAuthFailure(data.message || 'Session expired. Please log in again.');
+        }
+        throw new Error(data.message || 'Session expired. Please log in again.');
+      }
 
       if (!response.ok) {
         throw new Error(data.message || `Request failed with status ${response.status}`);
@@ -61,21 +104,109 @@ const Api = (() => {
      ====================================================================== */
 
   // POST /api/auth/login
+  // Returns session object. Token is stored internally.
   async function login(email, password) {
     const data = await request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
     });
+    // Save JWT token returned by Auth Service
+    if (data.token) saveToken(data.token);
     return data.session;
   }
 
-  // POST /api/patients (registration)
+  // POST /api/patients (registration via Auth Service → returns JWT)
   async function registerPatient(form) {
-    const data = await request('/patients', {
+    const data = await request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(form)
     });
+    // Save JWT token
+    if (data.token) saveToken(data.token);
     return data.session;
+  }
+
+  // Logout — clear the stored token
+  function logout() {
+    clearToken();
+  }
+
+  // Decode JWT payload (stateless client-side claim inspection)
+  function decodeToken(token) {
+    const raw = token || getToken();
+    if (!raw) return null;
+    try {
+      const parts = raw.split('.');
+      if (parts.length !== 3) return null;
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.warn('Unable to decode JWT token:', e);
+      return null;
+    }
+  }
+
+  // GET /api/auth/verify — verifies token with Auth Service
+  async function verifyToken() {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const data = await request('/auth/verify', { method: 'GET' });
+      return data.user || null;
+    } catch (e) {
+      clearToken();
+      return null;
+    }
+  }
+
+  /* ======================================================================
+     MICROSERVICES TELEMETRY & CIRCUIT BREAKER
+     ====================================================================== */
+  async function getMicroservicesHealth() {
+    try {
+      const origin = BASE_URL.replace(/\/api$/, '');
+      const resp = await fetch(`${origin}/services/health`);
+      return await resp.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  async function getCircuitBreakers() {
+    try {
+      const origin = BASE_URL.replace(/\/api$/, '');
+      const resp = await fetch(`${origin}/services/circuit-breakers`);
+      return await resp.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  async function tripCircuitBreaker(service) {
+    try {
+      const origin = BASE_URL.replace(/\/api$/, '');
+      const resp = await fetch(`${origin}/services/circuit-breakers/${service}/trip`, { method: 'POST' });
+      return await resp.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  async function resetCircuitBreaker(service) {
+    try {
+      const origin = BASE_URL.replace(/\/api$/, '');
+      const resp = await fetch(`${origin}/services/circuit-breakers/${service}/reset`, { method: 'POST' });
+      return await resp.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   }
 
   /* ======================================================================
@@ -244,7 +375,17 @@ const Api = (() => {
 
   return {
     login,
+    logout,
     registerPatient,
+    saveToken,
+    getToken,
+    clearToken,
+    decodeToken,
+    verifyToken,
+    getMicroservicesHealth,
+    getCircuitBreakers,
+    tripCircuitBreaker,
+    resetCircuitBreaker,
     listDoctors,
     getDoctor,
     createDoctor,

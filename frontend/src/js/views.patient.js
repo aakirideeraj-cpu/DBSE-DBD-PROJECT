@@ -125,11 +125,16 @@ const PatientView = (() => {
     const firstName = App.session.name.split(' ')[0];
 
     view.innerHTML = `
-      <div class="view-head">
-        <h1>Welcome back, ${Util.esc(firstName)}</h1>
-        <p>${upcoming.length
-            ? `Your next appointment is ${Util.esc(Util.relativeDay(upcoming[0].appointment_date).toLowerCase())} with ${Util.esc(upcoming[0].doctor_name)}.`
-            : 'You have nothing scheduled. Find a doctor to book your first slot.'}</p>
+      <div class="view-head row-between wrap">
+        <div>
+          <h1>Welcome back, ${Util.esc(firstName)}</h1>
+          <p>${upcoming.length
+              ? `Your next appointment is ${Util.esc(Util.relativeDay(upcoming[0].appointment_date).toLowerCase())} with ${Util.esc(upcoming[0].doctor_name)}.`
+              : 'You have nothing scheduled. Find a doctor to book your first slot.'}</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-patient-dash-token" style="align-self:flex-start;">
+          🔐 Session Token
+        </button>
       </div>
 
       ${Render.statGrid([
@@ -183,6 +188,7 @@ const PatientView = (() => {
         </aside>
       </div>`;
 
+    view.querySelector('#btn-patient-dash-token')?.addEventListener('click', App.openTokenExplainerModal);
     Util.onClick(view, '[data-goto]', el => App.go(el.dataset.goto));
   }
 
@@ -491,6 +497,8 @@ const PatientView = (() => {
   async function profile(view) {
     view.innerHTML = Render.skeletonRows(4);
     const p = await Api.getPatient(App.session.id);
+    const token = Api.getToken();
+    const claims = Api.decodeToken(token);
 
     view.innerHTML = `
       <div class="view-head">
@@ -564,6 +572,42 @@ const PatientView = (() => {
           <button class="btn btn-primary" id="save-profile">Save changes</button>
           <button class="btn btn-ghost" id="reset-profile">Discard</button>
         </div>
+      </div>
+
+      <!-- JWT Tokenization Card for Patient -->
+      <div class="card mt-3" style="max-width:620px" id="token-card">
+        <div class="card-head">
+          <div class="row-between" style="width:100%">
+            <div>
+              <h3>Security & Tokenization (JWT)</h3>
+              <p class="small muted">Cryptographic Bearer Token issued by Auth Microservice</p>
+            </div>
+            <span class="badge badge-available"><span class="dot"></span>Token Active</span>
+          </div>
+        </div>
+
+        <div class="field mb-3">
+          <label>Active Bearer Token</label>
+          <div style="background:#0f172a;color:#e2e8f0;padding:10px;border-radius:var(--r-md);font-family:monospace;font-size:11px;word-break:break-all;line-height:1.4;" id="patient-token-display">
+            ${token ? Util.esc(token.substring(0, 32) + '...' + token.substring(token.length - 18)) : 'No token found in storage'}
+          </div>
+          <div class="btn-group mt-2">
+            <button class="btn btn-secondary btn-sm" id="btn-toggle-token">Show full token</button>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-token">Copy token</button>
+            <button class="btn btn-primary btn-sm" id="btn-test-auth-call">Test Token with Microservice</button>
+          </div>
+        </div>
+
+        <div class="panel-title">Decoded Token Claims</div>
+        <table class="table" style="font-size:12.5px;">
+          <tbody>
+            <tr><td><strong>Subject (Patient ID)</strong></td><td><code>${claims?.id ?? p.patient_id}</code></td></tr>
+            <tr><td><strong>Role</strong></td><td><span class="badge badge-neutral">patient</span></td></tr>
+            <tr><td><strong>Registered Email</strong></td><td>${Util.esc(p.email)}</td></tr>
+            <tr><td><strong>Signing Algorithm</strong></td><td><code>HMAC-SHA256 (HS256)</code></td></tr>
+            <tr><td><strong>Verification Mode</strong></td><td>Stateless Bearer (Validated by Appointment Microservice)</td></tr>
+          </tbody>
+        </table>
       </div>`;
 
     const form = view.querySelector('#profile-form');
@@ -586,6 +630,46 @@ const PatientView = (() => {
     });
 
     view.querySelector('#reset-profile').addEventListener('click', () => App.go('profile'));
+
+    // Token Card Interactions
+    const tokenDisplay = view.querySelector('#patient-token-display');
+    const toggleBtn = view.querySelector('#btn-toggle-token');
+    let showingFull = false;
+
+    toggleBtn?.addEventListener('click', () => {
+      showingFull = !showingFull;
+      if (showingFull) {
+        tokenDisplay.textContent = token;
+        toggleBtn.textContent = 'Hide full token';
+      } else {
+        tokenDisplay.textContent = token ? (token.substring(0, 32) + '...' + token.substring(token.length - 18)) : '';
+        toggleBtn.textContent = 'Show full token';
+      }
+    });
+
+    view.querySelector('#btn-copy-token')?.addEventListener('click', () => {
+      if (token) {
+        navigator.clipboard.writeText(token);
+        Toast.ok('Bearer token copied to clipboard');
+      }
+    });
+
+    view.querySelector('#btn-test-auth-call')?.addEventListener('click', async () => {
+      const testBtn = view.querySelector('#btn-test-auth-call');
+      try {
+        testBtn.disabled = true;
+        testBtn.textContent = 'Pinging microservice...';
+        await Api.listAppointments({ patientId: p.patient_id });
+        Toast.ok('HTTP 200 OK: Appointment Microservice verified token successfully!');
+      } catch (err) {
+        Toast.bad('Verification failed: ' + err.message);
+      } finally {
+        if (testBtn) {
+          testBtn.disabled = false;
+          testBtn.textContent = 'Test Token with Microservice';
+        }
+      }
+    });
   }
 
   /* Small debounce so typing in search doesn't fire a request per keystroke. */
